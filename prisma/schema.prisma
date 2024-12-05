@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+// Prisma schema file
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// Define enum for Role types
+enum RoleType {
+  ADMIN
+  USER
+}
+
+// Define enum for Gender
+enum Gender {
+  LAKI_LAKI
+  PEREMPUAN
+}
+
+// Model for User
+model User {
+  id        Int      @id @default(autoincrement())
+  username  String   @unique @db.VarChar(100)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  roleId    Int
+  role      Role     @relation(fields: [roleId], references: [id])
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+// Model for Employee
+model Employee {
+  id         Int      @id @default(autoincrement())
+  idCard     String   @unique @db.VarChar(50)
+  name       String   @db.VarChar(100)
+  gender     Gender   // Using enum for gender
+  phone      String   @unique @db.VarChar(15)
+  email      String   @unique @db.VarChar(255)
+  address    String   @db.VarChar(255)
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@map("employees")
+}
+
+// Model for Division
+model Division {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("divisions")
+}
+
+// Model for Password Reset
+model PasswordReset {
+  id        Int      @id @default(autoincrement())
+  email     String   @db.VarChar(255)
+  otp       String   @db.VarChar(6) // Assuming OTP is a 6-digit code
+  expiresAt DateTime
+
+  @@map("password_resets")
+}
+
+// Model for Role
+model Role {
+  id          Int         @id @default(autoincrement())
+  name        RoleType    @unique
+  description String?      @db.VarChar(255)
+  permissions RoleHasPermission[]
+  users       User[]
+
+  @@map("roles")
+}
+
+// Model for Permission
+model Permission {
+  id          Int                @id @default(autoincrement())
+  name        String             @unique @db.VarChar(100)
+  description String?            @db.VarChar(255)
+  roles       RoleHasPermission[]
+
+  @@map("permissions")
+}
+
+// Join table for Role and Permission
+model RoleHasPermission {
+  id          Int        @id @default(autoincrement())
+  roleId      Int
+  permissionId Int
+  role        Role       @relation(fields: [roleId], references: [id])
+  permission  Permission @relation(fields: [permissionId], references: [id])
+
+  @@unique([roleId, permissionId])
+
+  @@map("role_has_permissions")
+}
